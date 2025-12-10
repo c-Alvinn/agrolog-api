@@ -3,12 +3,12 @@ import lombok.Getter;
 
 @Getter
 public enum Role {
-    DRIVER("DRIVER"),
-    CARRIER("CARRIER"),
-    GATE_KEEPER("GATE_KEEPER"),
-    SCALE_OPERATOR("SCALE_OPERATOR"),
-    MANAGER("MANAGER"),
-    ADMIN("ADMIN");
+    DRIVER("ROLE_DRIVER"),
+    CARRIER("ROLE_CARRIER"),
+    GATE_KEEPER("ROLE_GATE_KEEPER"),
+    SCALE_OPERATOR("ROLE_SCALE_OPERATOR"),
+    MANAGER("ROLE_MANAGER"),
+    ADMIN("ROLE_ADMIN");
 
     private String roleName;
 

@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public abstract class BaseEntity {
 
     @Column(name = "active", nullable = false)
-    private Boolean active = true;
+    private boolean active = true;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

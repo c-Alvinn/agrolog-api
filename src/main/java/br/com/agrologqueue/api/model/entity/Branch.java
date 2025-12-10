@@ -24,6 +24,9 @@ public class Branch extends BaseEntity {
     @Column(name = "address")
     private String address;
 
+    @Column(name = "code")
+    private String code;
+
     @ManyToOne
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
