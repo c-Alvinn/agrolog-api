@@ -45,3 +45,28 @@
 ### F5.3 - Relatório de Status da Fila
 - [ ] Implementar o método para retornar a contagem de agendamentos por `QueueStatus` para uma determinada `Branch`.
 - [ ] Criar o endpoint `GET /schedules/reports/queue-status` com filtro de `Branch`.
+
+## ⚙️ Fase 6: Otimização do Fluxo e Auditoria
+
+### F6.1 - Comunicação e UX
+- [ ] Implementar mecanismo de notificação básico para avisar o **DRIVER** quando o seu agendamento passar para o status `IN_SERVICE`.
+- [ ] Criar um endpoint simplificado para o `GATE_KEEPER` que permite buscar e transicionar o status de um agendamento pela **placa do caminhão**.
+
+### F6.2 - Auditoria
+- [ ] Adicionar entidade/estrutura para registrar logs de auditoria de **transição de status** (quem, quando e qual status).
+
+### F6.3 - Finalização de Mapeamento
+- [ ] **Revisão e finalização de todos os mapeamentos de relacionamento entre entidades** (OneToMany, ManyToOne, etc.) para garantir a integridade total do modelo.
+
+## 💾 Fase 7: Migração de Banco de Dados (Liquibase)
+
+### F7.1 - Configuração
+- [ ] Configurar o Liquibase no projeto.
+
+### F7.2 - Criação de Tabelas
+- [ ] Criar *changelogs* do Liquibase para a criação de todas as tabelas: `COMPANY`, `CARRIER`, `USER`, `BRANCH`, `SCHEDULE`, e outras que surgiram na Fase 6.
+- [ ] **Garantir a criação de todos os vínculos (Foreign Keys).**
+
+### F7.3 - Configuração de Sequences
+- [ ] Criar sequences para as chaves primárias (`id`).
+- [ ] **Configurar as sequences para iniciarem com um número aleatório de até 3 dígitos.**
