@@ -1,59 +1,47 @@
-## ✅ TO-DO LIST DO PROJETO AGROLOG API
+# AGROLOG API - PLANEJAMENTO DO PROJETO
 
-Este documento rastreia o progresso do projeto, detalhando as atividades concluídas e as que estão no planejamento.
+## ✅ Fase 1: Configuração e Usuários (Concluída)
+- [x] Configuração inicial do projeto (Spring Boot, dependências).
+- [x] Implementação das entidades básicas (User, Company, Carrier).
+- [x] Sistema de Autenticação JWT.
+- [x] Criação de Roles (ADMIN, MANAGER, CARRIER, SCALE_OPERATOR, GATE_KEEPER, DRIVER).
+- [x] Endpoint de registro para DRIVER (acesso público).
+- [x] Endpoint de registro para Usuários Internos (ADMIN, MANAGER).
+- [x] Endpoint de registro para Usuários Carrier (ADMIN, CARRIER).
 
----
+## ✅ Fase 2: Módulos Base (Company e Carrier) (Concluída)
+- [x] CRUD para `Company` (Regras de acesso e escopo: ADMIN, MANAGER).
+- [x] CRUD para `Carrier` (Regras de acesso e escopo: ADMIN, CARRIER).
 
-### 🟢 FASE 1: SETUP E ESTRUTURA INICIAL (CONCLUÍDA)
+## ✅ Fase 3: Módulo Filial (Branch) (Concluída)
+- [x] Entidade `Branch` com vínculo à `Company`.
+- [x] CRUD para `Branch`.
+- [x] Implementação do escopo de `MANAGER` (só gerencia filiais da sua Company).
+- [x] Regras de acesso e leitura para `SCALE_OPERATOR` e `GATE_KEEPER`.
 
-| Tópico | Atividade | Status | Detalhes |
-| :--- | :--- | :--- | :--- |
-| **F1.1 - Inicialização** | Criação do Projeto Spring Boot. | ✅ Feito | Configuração de dependências básicas (Web, JPA, Security). |
-| **F1.2 - Dependencies** | Adição de dependências de segurança e utilitários. | ✅ Feito | Inclusão de Spring Security, JWT e Validação (`jakarta.validation`). |
-| **F1.3 - Estrutura** | Definição da Estrutura de Packages (controllers, service, repository, model). | ✅ Feito | Organização inicial dos pacotes core. |
-| **F1.4 - Exceções** | Implementação de handlers de exceção customizados. | ✅ Feito | Classes `ResourceNotFoundException`, `ValidationException`, `UnauthorizedAccessException`. |
+## ✅ Fase 4: Agendamento e Fila (Schedule) (Concluída)
+- [x] Entidade `Schedule` com `Branch`, `Driver`, `Carrier` e `QueueStatus`.
+- [x] Enum `QueueStatus` (`SCHEDULED`, `IN_SERVICE`, `COMPLETED`, `CANCELED`).
+- [x] Criação do endpoint `POST /schedules`.
+- [x] Implementação da lógica de **Escopo na Criação** para todas as Roles.
+- [x] Lógica de atribuição da **posição na fila** (`queuePosition`) no método `create`.
+- [x] Implementação dos endpoints de Leitura (`GET /schedules` e `GET /schedules/{id}`) com filtro de escopo.
+- [x] Implementação das transições de status (`PATCH /in-service`, `/completed`, `/cancel`).
+- [x] Lógica de **reordenação da fila** ao mover para `IN_SERVICE` ou `CANCELED`.
+- [x] Implementação do endpoint de exclusão (`DELETE /schedules/{id}`) restrito a `ADMIN`.
+- [x] Atualização do `SecurityConfig` e `SchedulingController`.
 
----
+## ⏭️ Fase 5: Relatórios e Dashboards (Em Andamento)
 
-### 🟢 FASE 2: FUNDAÇÃO E ENTIDADES CORE (CONCLUÍDA)
+### F5.1 - Estrutura de Relatórios
+- [ ] Criar DTOs de retorno para métricas (`TimeMetricsDTO`, `QueueReportDTO`).
+- [ ] Adicionar métodos de relatório ao `ScheduleService` ou criar um novo `ReportingService`.
 
-| Tópico | Atividade | Status | Detalhes |
-| :--- | :--- | :--- | :--- |
-| **F2.1 - Entidades Base** | Criação das Entidades `User`, `Company`, `Branch`, `Carrier`. | ✅ Feito | Mapeamento ORM e relacionamentos iniciais. |
-| **F2.2 - Roles** | Definição do Enum `Role`. | ✅ Feito | `ADMIN`, `MANAGER`, `GATE_KEEPER`, `SCALE_OPERATOR`, `CARRIER`, `DRIVER`. |
-| **F2.3 - Repositórios** | Criação das interfaces `JpaRepository`. | ✅ Feito | `UserRepository`, `CompanyRepository`, `BranchRepository`, `CarrierRepository`. |
-| **F2.4 - DTOs Base** | Definição de DTOs de requisição e resposta básicos. | ✅ Feito | DTOs de login e registro de motorista. |
+### F5.2 - Relatório de Tempo Médio de Permanência
+- [ ] Implementar o método para calcular o tempo médio entre `ScheduledAt` e `ReleasedAt` (para status `COMPLETED`).
+- [ ] Criar o endpoint `GET /schedules/reports/average-time` com filtros de `Branch` e período.
+- [ ] Implementar validação de escopo para relatórios (somente dados da Company do usuário logado).
 
----
-
-### 🟢 FASE 3: SEGURANÇA E ESTRUTURA ORGANIZACIONAL (CONCLUÍDA)
-
-| Tópico                          | Atividade | Status | Detalhes |
-|:--------------------------------| :--- | :--- | :--- |
-| **F3.1 - Segurança**            | Implementação de JWT Authentication. | ✅ Feito | Configuração do `SecurityConfig` (Stateless, filtro JWT) e `TokenService`. |
-| **F3.2 - Auth/Login**           | Refatoração de Login e Mapeamento. | ✅ Feito | `AuthService.authenticate` retorna `LoginResponseDTO` (Token + `UserResponseDTO`). |
-| **F3.3 - Carrier CRUD**         | CRUD da Entidade `Carrier`. | ✅ Feito | CRUD básico com validação de unicidade por nome e regras de acesso por URL. |
-| **F3.4 - Company CRUD**         | CRUD da Entidade `Company`. | ✅ Feito | Regras de acesso: `ADMIN` (CRUD), `MANAGER` (PUT, GET), Outros (GET). |
-| **F3.5 - Branch CRUD & Escopo** | CRUD da Entidade `Branch` com Escopo. | ✅ Feito | Lógica no `BranchService` para restringir `MANAGER`, `SCALE_OPERATOR` e `GATE_KEEPER` ao escopo da sua `Company`. Criação de endpoint filtrado para `DRIVER`/`CARRIER`. |
-| **F3.6 - Cadastro Usuários**    | Lógica de Escopo para `User` e `CarrierUser`. | ✅ Feito | `UserService` restringe o cadastro de `CARRIER` ao seu próprio escopo e garante os campos `null` para `ROLE_CARRIER`. |
-| **F3.7 - Autorização**          | Centralização das regras de acesso. | ✅ Feito | Todas as regras de acesso (RBAC) definidas por URL no `SecurityConfig.java`. |
-
----
-
-### 🟡 FASE 4: MÓDULO DE AGENDAMENTO (EM PROGRESSO)
-
-| Tópico | Atividade | Status | Detalhes |
-| :--- | :--- | :--- | :--- |
-| **F4.1 - Entidade** | Criação da Entidade `Scheduling` (`Agendamento`). | ⏳ Próxima | Mapeamento completo com vínculos necessários (`Branch`, `Carrier`, `Driver`, etc.). |
-| **F4.2 - CRUD Básico** | Implementação do `SchedulingService` e `Controller`. | ⬜ Pendente | Métodos para criação, leitura e regras de validação iniciais. |
-| **F4.3 - Lógica de Status** | Gerenciamento do Fluxo de Status (Workflow). | ⬜ Pendente | Definição das transições de status: `AGENDADO` -> `EM PÁTIO` -> `CARREGANDO` -> `CONCLUÍDO`. |
-| **F4.4 - Autorização de Status** | Restrição de Transições por Role. | ⬜ Pendente | Restrições de quem pode mover para `EM PÁTIO` (`GATE_KEEPER`) e para `CARREGANDO`/`CONCLUÍDO` (`SCALE_OPERATOR`). |
-| **F4.5 - Cancelamento** | Implementação de regras de cancelamento. | ⬜ Pendente | Regras e motivos para cancelamento de agendamentos. |
-
----
-
-### ⚪ FASES FUTURAS (BACKLOG)
-
-* **F5.0 - Relatórios e Eficiência:** Criação de *endpoints* para relatórios de eficiência de pátio, tempo médio de permanência e volume agendado.
-* **F6.0 - Otimização e Performance:** Otimização de consultas, paginação e implementação de *caching*.
-* **F7.0 - Monitoramento:** Configuração de *logging* e *tracing* da aplicação.
+### F5.3 - Relatório de Status da Fila
+- [ ] Implementar o método para retornar a contagem de agendamentos por `QueueStatus` para uma determinada `Branch`.
+- [ ] Criar o endpoint `GET /schedules/reports/queue-status` com filtro de `Branch`.

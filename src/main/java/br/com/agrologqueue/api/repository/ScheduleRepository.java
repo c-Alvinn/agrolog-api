@@ -13,16 +13,16 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ScheduleReposiroty extends JpaRepository<Schedule, Long> {
+public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
-    @Query("SELECT MAX(s.queuePosition) FROM schedule s WHERE s.branch.id = :branchId AND s.queueStatus = br.com.agrologqueue.api.model.enums.QueueStatus.WAITING")
+    @Query("SELECT MAX(s.queuePosition) FROM schedule s WHERE s.branch.id = :branchId AND s.queueStatus = br.com.agrologqueue.api.model.enums.QueueStatus.SCHEDULED")
     Optional<Integer> findMaxQueuePosition(@Param("branchId") Long branchId);
 
     @Modifying
     @Transactional
     @Query("UPDATE schedule s SET s.queuePosition = s.queuePosition - 1 " +
             "WHERE s.branch.id = :branchId " +
-            "AND s.queueStatus = br.com.agrologqueue.api.model.enums.QueueStatus.WAITING " +
+            "AND s.queueStatus = br.com.agrologqueue.api.model.enums.QueueStatus.SCHEDULED " +
             "AND s.queuePosition > :oldPosition")
     int reorderQueuePositions(@Param("branchId") Long branchId, @Param("oldPosition") Integer oldPosition);
 
@@ -42,4 +42,8 @@ public interface ScheduleReposiroty extends JpaRepository<Schedule, Long> {
     );
 
     long countByBranchIdAndQueueStatus(Long branchId, QueueStatus status);
+
+    List<Schedule> findByBranch_Company_Id(Long companyId);
+    List<Schedule> findByCarrierId(Long carrierId);
+    List<Schedule> findByDriverId(Long driverId);
 }

@@ -54,6 +54,12 @@ public class SecurityConfig {
                     req.requestMatchers(HttpMethod.GET, "/branchy/*").authenticated();
                     req.requestMatchers(HttpMethod.GET, "/branchy/company/*").authenticated();
 
+                    req.requestMatchers(HttpMethod.POST, "/schedules").hasAnyRole("ADMIN", "MANAGER", "CARRIER", "SCALE_OPERATOR", "GATE_KEEPER");
+                    req.requestMatchers(HttpMethod.GET, "/schedules", "/schedules/*").authenticated();
+                    req.requestMatchers(HttpMethod.PATCH, "/schedules/{id}/in-service", "/schedules/{id}/completed").hasAnyRole("ADMIN", "MANAGER", "SCALE_OPERATOR");
+                    req.requestMatchers(HttpMethod.PATCH, "/schedules/{id}/cancel").hasAnyRole("ADMIN", "MANAGER", "SCALE_OPERATOR", "GATE_KEEPER", "DRIVER");
+                    req.requestMatchers(HttpMethod.DELETE, "/schedules/{id}").hasRole("ADMIN");
+
                     req.anyRequest().authenticated();
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

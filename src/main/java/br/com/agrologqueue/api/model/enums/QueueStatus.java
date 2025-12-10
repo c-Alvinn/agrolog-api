@@ -1,8 +1,8 @@
 package br.com.agrologqueue.api.model.enums;
 
 public enum QueueStatus {
-    WAITING,
+    SCHEDULED,
     IN_SERVICE,
-    RELEASED,
+    COMPLETED,
     CANCELED
 }
