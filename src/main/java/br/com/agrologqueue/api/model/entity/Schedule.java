@@ -9,7 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -26,11 +25,14 @@ public class Schedule extends BaseEntity {
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne
+    @Version
+    private Long version;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "driver_id", nullable = false)
     private User driver;
 
@@ -42,7 +44,7 @@ public class Schedule extends BaseEntity {
     @Column(name = "operation_type", nullable = false)
     private OperationType operationType;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "carrier_id")
     private Carrier carrier;
 
@@ -59,10 +61,6 @@ public class Schedule extends BaseEntity {
 
     @Column(name = "queue_position")
     private Integer queuePosition;
-
-    @CreationTimestamp
-    @Column(name = "scheduled_at", nullable = false)
-    private LocalDateTime scheduledAt;
 
     @Column(name = "called_at")
     private LocalDateTime calledAt;

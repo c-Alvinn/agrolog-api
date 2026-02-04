@@ -1,13 +1,19 @@
 package br.com.agrologqueue.api.controller;
 
+import br.com.agrologqueue.api.model.dto.report.QueueStatusReportDTO;
 import br.com.agrologqueue.api.model.dto.schedule.ScheduleRequestDTO;
 import br.com.agrologqueue.api.model.dto.schedule.ScheduleResponseDTO;
+import br.com.agrologqueue.api.model.enums.ReportPeriod;
+import br.com.agrologqueue.api.service.ReportingService;
 import br.com.agrologqueue.api.service.ScheduleService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -15,9 +21,11 @@ import java.util.List;
 public class SchedulingController {
 
     private final ScheduleService scheduleService;
+    private final ReportingService reportingService;
 
-    public SchedulingController(ScheduleService scheduleService) {
+    public SchedulingController(ScheduleService scheduleService, ReportingService reportingService) {
         this.scheduleService = scheduleService;
+        this.reportingService = reportingService;
     }
 
     @PostMapping
@@ -60,5 +68,25 @@ public class SchedulingController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         scheduleService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/reports/queue-status")
+    public ResponseEntity<QueueStatusReportDTO> getQueueStatusReport(@RequestParam Long branchId) {
+        return ResponseEntity.ok(reportingService.getQueueStatusByBranch(branchId));
+    }
+
+    @GetMapping("/reports/performance/pdf")
+    public void exportToPdf(@RequestParam(defaultValue = "TODAY") ReportPeriod period,
+                            HttpServletResponse response) throws Exception {
+
+        response.setContentType("application/pdf");
+
+        String dateStamp = LocalDate.now().format(DateTimeFormatter.ofPattern("dd_MM_yyyy"));
+
+        String fileName = String.format("relatorio_atendimentos_%s_%s.pdf", period.name(), dateStamp);
+
+        response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+
+        reportingService.generatePerformanceReport(period, response);
     }
 }

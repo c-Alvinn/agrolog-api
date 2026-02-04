@@ -13,7 +13,6 @@ public record ScheduleRequestDTO(
 
         Long companyId,
 
-        @NotBlank(message = "O CPF do motorista é obrigatório.")
         String driverCpf,
 
         @NotNull(message = "O tipo de grão é obrigatório.")

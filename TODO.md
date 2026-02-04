@@ -31,20 +31,20 @@
 - [x] Implementação do endpoint de exclusão (`DELETE /schedules/{id}`) restrito a `ADMIN`.
 - [x] Atualização do `SecurityConfig` e `SchedulingController`.
 
-## ⏭️ Fase 5: Relatórios e Dashboards (Em Andamento)
+## ✅ Fase 5: Relatórios e Dashboards (Concluída)
 
 ### F5.1 - Estrutura de Relatórios
-- [ ] Criar DTOs de retorno para métricas (`TimeMetricsDTO`, `QueueReportDTO`).
-- [ ] Adicionar métodos de relatório ao `ScheduleService` ou criar um novo `ReportingService`.
+- [x] Criação de DTOs de métricas (`QueueStatusReportDTO`) e base do `ReportingService`.
 
-### F5.2 - Relatório de Tempo Médio de Permanência
-- [ ] Implementar o método para calcular o tempo médio entre `ScheduledAt` e `ReleasedAt` (para status `COMPLETED`).
-- [ ] Criar o endpoint `GET /schedules/reports/average-time` com filtros de `Branch` e período.
-- [ ] Implementar validação de escopo para relatórios (somente dados da Company do usuário logado).
+### F5.2 - Relatório de Performance (PDF)
+- [x] Implementar exportação de agendamentos `IN_SERVICE` ou `COMPLETED` em formato PDF.
+- [x] Criar Enum `ReportPeriod` para gestão de filtros temporais (Hoje, Ontem, 7 dias).
+- [x] Implementar validação de escopo rigorosa (apenas dados da `Company` do utilizador logado).
+- [x] Formatação de tabela PDF com tradução para Português, nome da empresa e data de geração no título/ficheiro.
 
 ### F5.3 - Relatório de Status da Fila
-- [ ] Implementar o método para retornar a contagem de agendamentos por `QueueStatus` para uma determinada `Branch`.
-- [ ] Criar o endpoint `GET /schedules/reports/queue-status` com filtro de `Branch`.
+- [x] Implementar método para retornar a contagem de agendamentos por `QueueStatus` para dashboards.
+- [x] Criar o endpoint `GET /reports/queue-status` com retorno "achatado" para facilitar a integração com o front-end.
 
 ## ⚙️ Fase 6: Otimização do Fluxo e Auditoria
 

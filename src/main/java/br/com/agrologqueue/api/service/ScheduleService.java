@@ -42,30 +42,20 @@ public class ScheduleService {
         User loggedUser = securityUtils.getLoggedUser();
         Role userRole = loggedUser.getRole();
 
-        User driver;
-        Branch branch;
-        Carrier carrier;
+        User driver = getScheduleDriver(loggedUser, dto);
 
-        driver = getScheduleDriver(loggedUser, dto);
+        Branch branch = switch (userRole) {
+            case MANAGER, SCALE_OPERATOR, GATE_KEEPER -> validateInternalScopeAndGetBranch(loggedUser, dto);
+            default -> getBranch(dto.branchId());
+        };
 
-        if (userRole == Role.DRIVER) {
-            branch = validateExternalScopeAndGetBranch(dto);
-            carrier = getCarrier(dto.carrierId());
-
-        } else if (userRole == Role.MANAGER || userRole == Role.SCALE_OPERATOR || userRole == Role.GATE_KEEPER) {
-            branch = validateInternalScopeAndGetBranch(loggedUser, dto);
-            carrier = getCarrier(dto.carrierId());
-
-        } else if (userRole == Role.CARRIER) {
-            branch = validateExternalScopeAndGetBranch(dto);
-            carrier = validateCarrierScopeAndGetCarrier(loggedUser, dto);
-
-        } else if (userRole == Role.ADMIN) {
-            branch = getBranch(dto.branchId());
-            carrier = getCarrier(dto.carrierId());
-
+        Carrier carrier = null;
+        if (userRole == Role.CARRIER) {
+            carrier = loggedUser.getCarrier();
         } else {
-            throw new UnauthorizedAccessException("Sua role não possui permissão para criar agendamentos.");
+            Long carrierId = dto.carrierId() != null ? dto.carrierId() :
+                    (driver.getCarrier() != null ? driver.getCarrier().getId() : null);
+            carrier = (carrierId != null) ? getCarrier(carrierId) : null;
         }
 
         Schedule schedule = mapToSchedule(dto, branch, driver, carrier);
@@ -77,7 +67,6 @@ public class ScheduleService {
         schedule.setQueuePosition(nextQueuePosition);
 
         Schedule savedSchedule = scheduleRepository.save(schedule);
-
         return toResponseDTO(savedSchedule);
     }
 
@@ -383,15 +372,15 @@ public class ScheduleService {
                 schedule.getBranch().getName(),
                 schedule.getDriver().getId(),
                 schedule.getDriver().getName(),
-                schedule.getCarrier().getId(),
-                schedule.getCarrier().getName(),
+                schedule.getCarrier() != null ? schedule.getCarrier().getId() : null,
+                schedule.getCarrier() != null ? schedule.getCarrier().getName() : "Autônomo / Não Informado",
                 schedule.getGrainType(),
                 schedule.getOperationType(),
                 schedule.getLicensePlate(),
                 schedule.getTruckType(),
                 schedule.getQueueStatus(),
                 schedule.getQueuePosition(),
-                schedule.getScheduledAt(),
+                schedule.getCreatedAt(),
                 schedule.getCalledAt(),
                 schedule.getReleasedAt()
         );
