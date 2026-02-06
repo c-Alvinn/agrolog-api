@@ -43,3 +43,15 @@
 - [x] Correção de tabela reservada (`User` -> `users`).
 - [x] Definição de `search_path` e constraints.
 - [x] Execução e validação da primeira migração.
+
+## 📄 Fase 8: Documentação da API (Swagger/OpenAPI)
+
+### F8.1 - Configuração e Segurança (Concluída)
+- [x] Adicionar dependência `springdoc-openapi` (v2.8.5).
+- [x] Criar `OpenApiConfig` com definições de info e esquema de segurança (JWT).
+
+### F8.2 - Documentação dos Endpoints (Em Andamento)
+- [ ] **Auth & Users:** Documentar login, registro e gestão de usuários.
+- [ ] **Cadastros Base:** Documentar `Company`, `Carrier` e `Branch`.
+- [ ] **Operação:** Documentar o fluxo principal de `Schedule` (Check-in, Chamada, Finalização).
+- [ ] **Refinamento:** Adicionar descrições detalhadas nos DTOs (`@Schema`) e exemplos de respostas de erro (400, 403, 404).

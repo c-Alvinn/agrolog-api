@@ -32,7 +32,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(req -> {
                     req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/user/driver/register").permitAll();
-                    req.requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll();
+                    req.requestMatchers(
+                            "/v3/api-docs/**",       // Rota padrão (manter por segurança)
+                            "/swagger-ui/**",        // Recursos visuais (CSS, JS)
+                            "/swagger-ui.html",      // HTML legado
+                            "/docs",                 // Sua interface personalizada
+                            "/api-docs/**"           // <--- ADICIONE ESTA LINHA (Corrige o erro 403)
+                    ).permitAll();
 
                     req.requestMatchers(HttpMethod.POST, "/user/internal/register").hasAnyRole("ADMIN", "MANAGER");
                     req.requestMatchers(HttpMethod.POST, "/user/carrier/register").hasAnyRole("ADMIN", "CARRIER");
