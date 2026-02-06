@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -67,4 +69,7 @@ public class Schedule extends BaseEntity {
 
     @Column(name = "released_at")
     private LocalDateTime releasedAt;
+
+    @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ScheduleHistory> history = new ArrayList<>();
 }

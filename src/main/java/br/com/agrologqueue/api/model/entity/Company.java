@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -23,4 +26,10 @@ public class Company extends BaseEntity {
 
     @Column(name = "cnpj", unique = true)
     private String cnpj;
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Branch> branches = new ArrayList<>();
+
+    @OneToMany(mappedBy = "company")
+    private List<User> employees = new ArrayList<>();
 }

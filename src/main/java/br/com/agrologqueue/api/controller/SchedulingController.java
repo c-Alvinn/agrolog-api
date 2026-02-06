@@ -3,6 +3,7 @@ package br.com.agrologqueue.api.controller;
 import br.com.agrologqueue.api.model.dto.report.QueueStatusReportDTO;
 import br.com.agrologqueue.api.model.dto.schedule.ScheduleRequestDTO;
 import br.com.agrologqueue.api.model.dto.schedule.ScheduleResponseDTO;
+import br.com.agrologqueue.api.model.dto.schedule.ScheduleTransitionDTO;
 import br.com.agrologqueue.api.model.enums.ReportPeriod;
 import br.com.agrologqueue.api.service.ReportingService;
 import br.com.agrologqueue.api.service.ScheduleService;
@@ -46,22 +47,22 @@ public class SchedulingController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/{id}/in-service")
-    public ResponseEntity<ScheduleResponseDTO> moveToInService(@PathVariable Long id) {
-        ScheduleResponseDTO response = scheduleService.moveToInService(id);
-        return ResponseEntity.ok(response);
+    @PatchMapping("/in-service")
+    public ResponseEntity<Void> moveToInService(@RequestBody @Valid ScheduleTransitionDTO request) {
+        scheduleService.moveToInService(request);
+        return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{id}/completed")
-    public ResponseEntity<ScheduleResponseDTO> moveToCompleted(@PathVariable Long id) {
-        ScheduleResponseDTO response = scheduleService.moveToCompleted(id);
-        return ResponseEntity.ok(response);
+    @PatchMapping("/completed")
+    public ResponseEntity<Void> moveToCompleted(@RequestBody @Valid ScheduleTransitionDTO request) {
+        scheduleService.moveToCompleted(request);
+        return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{id}/cancel")
-    public ResponseEntity<ScheduleResponseDTO> cancel(@PathVariable Long id) {
-        ScheduleResponseDTO response = scheduleService.cancel(id);
-        return ResponseEntity.ok(response);
+    @PatchMapping("/cancel")
+    public ResponseEntity<Void> cancel(@RequestBody @Valid ScheduleTransitionDTO request) {
+        scheduleService.cancel(request);
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")

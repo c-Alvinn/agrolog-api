@@ -5,10 +5,8 @@ import br.com.agrologqueue.api.exceptions.UnauthorizedAccessException;
 import br.com.agrologqueue.api.exceptions.ValidationException;
 import br.com.agrologqueue.api.model.dto.schedule.ScheduleRequestDTO;
 import br.com.agrologqueue.api.model.dto.schedule.ScheduleResponseDTO;
-import br.com.agrologqueue.api.model.entity.Branch;
-import br.com.agrologqueue.api.model.entity.Carrier;
-import br.com.agrologqueue.api.model.entity.Schedule;
-import br.com.agrologqueue.api.model.entity.User;
+import br.com.agrologqueue.api.model.dto.schedule.ScheduleTransitionDTO;
+import br.com.agrologqueue.api.model.entity.*;
 import br.com.agrologqueue.api.model.enums.QueueStatus;
 import br.com.agrologqueue.api.model.enums.Role;
 import br.com.agrologqueue.api.repository.*;
@@ -28,13 +26,15 @@ public class ScheduleService {
     private final UserRepository userRepository;
     private final CarrierRepository carrierRepository;
     private final SecurityUtils securityUtils;
+    private final ScheduleHistoryRepository historyRepository;
 
-    public ScheduleService(ScheduleRepository scheduleRepository, BranchRepository branchRepository, UserRepository userRepository, CarrierRepository carrierRepository, SecurityUtils securityUtils) {
+    public ScheduleService(ScheduleRepository scheduleRepository, BranchRepository branchRepository, UserRepository userRepository, CarrierRepository carrierRepository, SecurityUtils securityUtils, ScheduleHistoryRepository historyRepository) {
         this.scheduleRepository = scheduleRepository;
         this.branchRepository = branchRepository;
         this.userRepository = userRepository;
         this.carrierRepository = carrierRepository;
         this.securityUtils = securityUtils;
+        this.historyRepository = historyRepository;
     }
 
     @Transactional
@@ -67,6 +67,7 @@ public class ScheduleService {
         schedule.setQueuePosition(nextQueuePosition);
 
         Schedule savedSchedule = scheduleRepository.save(schedule);
+        registerHistory(savedSchedule, null, QueueStatus.SCHEDULED, loggedUser);
         return toResponseDTO(savedSchedule);
     }
 
@@ -137,7 +138,7 @@ public class ScheduleService {
     }
 
     @Transactional
-    public ScheduleResponseDTO moveToInService(Long scheduleId) {
+    public void moveToInService(ScheduleTransitionDTO transition) {
         User loggedUser = securityUtils.getLoggedUser();
         Role userRole = loggedUser.getRole();
 
@@ -145,32 +146,33 @@ public class ScheduleService {
             throw new UnauthorizedAccessException("Somente usuários ADMIN, MANAGER ou SCALE_OPERATOR podem mover agendamentos para IN_SERVICE.");
         }
 
-        Schedule schedule = findAndValidateScope(scheduleId, loggedUser);
+        Schedule schedule = findActiveScheduleByPlateAndBranch(transition, loggedUser);
 
         if (schedule.getQueueStatus() != QueueStatus.SCHEDULED) {
             throw new ValidationException(String.format(
-                    "O agendamento %d não está no status SCHEDULED, mas sim em %s. Não pode ser movido para IN_SERVICE.",
-                    scheduleId, schedule.getQueueStatus().name())
+                    "O agendamento da placa %s não está no status SCHEDULED, mas sim em %s. Não pode ser movido para IN_SERVICE.",
+                    transition.licensePlate(), schedule.getQueueStatus().name())
             );
         }
 
+        QueueStatus oldStatus = schedule.getQueueStatus();
         Integer oldQueuePosition = schedule.getQueuePosition();
 
         schedule.setQueueStatus(QueueStatus.IN_SERVICE);
         schedule.setCalledAt(LocalDateTime.now());
         schedule.setQueuePosition(null);
 
-        Schedule updatedSchedule = scheduleRepository.save(schedule);
+        scheduleRepository.save(schedule);
 
         if (oldQueuePosition != null) {
             scheduleRepository.reorderQueuePositions(schedule.getBranch().getId(), oldQueuePosition);
         }
 
-        return toResponseDTO(updatedSchedule);
+        registerHistory(schedule, oldStatus, QueueStatus.IN_SERVICE, loggedUser);
     }
 
     @Transactional
-    public ScheduleResponseDTO moveToCompleted(Long scheduleId) {
+    public void moveToCompleted(ScheduleTransitionDTO transition) {
         User loggedUser = securityUtils.getLoggedUser();
         Role userRole = loggedUser.getRole();
 
@@ -178,24 +180,27 @@ public class ScheduleService {
             throw new UnauthorizedAccessException("Somente usuários ADMIN, MANAGER ou SCALE_OPERATOR podem marcar agendamentos como COMPLETED.");
         }
 
-        Schedule schedule = findAndValidateScope(scheduleId, loggedUser);
+        Schedule schedule = findActiveScheduleByPlateAndBranch(transition, loggedUser);
 
         if (schedule.getQueueStatus() != QueueStatus.IN_SERVICE) {
             throw new ValidationException(String.format(
-                    "O agendamento %d não está no status IN_SERVICE, mas sim em %s. Não pode ser movido para COMPLETED.",
-                    scheduleId, schedule.getQueueStatus().name())
+                    "O agendamento da placa %s não está no status IN_SERVICE, mas sim em %s. Não pode ser movido para COMPLETED.",
+                    transition.licensePlate(), schedule.getQueueStatus().name())
             );
         }
+
+        QueueStatus oldStatus = schedule.getQueueStatus();
 
         schedule.setQueueStatus(QueueStatus.COMPLETED);
         schedule.setReleasedAt(LocalDateTime.now());
 
-        Schedule updatedSchedule = scheduleRepository.save(schedule);
-        return toResponseDTO(updatedSchedule);
+        scheduleRepository.save(schedule);
+
+        registerHistory(schedule, oldStatus, QueueStatus.IN_SERVICE, loggedUser);
     }
 
     @Transactional
-    public ScheduleResponseDTO cancel(Long scheduleId) {
+    public void cancel(ScheduleTransitionDTO transition) {
         User loggedUser = securityUtils.getLoggedUser();
         Role userRole = loggedUser.getRole();
 
@@ -203,46 +208,32 @@ public class ScheduleService {
             throw new UnauthorizedAccessException("Usuários CARRIER não têm permissão para cancelar agendamentos.");
         }
 
-        Schedule schedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Schedule", "id", scheduleId));
+        Schedule schedule = findActiveScheduleByPlateAndBranch(transition, loggedUser);
 
-        if (userRole != Role.ADMIN) {
-            boolean allowed = false;
-
-            if ((userRole == Role.MANAGER || userRole == Role.SCALE_OPERATOR || userRole == Role.GATE_KEEPER) && loggedUser.getCompany() != null) {
-                if (schedule.getBranch().getCompany().getId().equals(loggedUser.getCompany().getId())) {
-                    allowed = true;
-                }
-            } else if (userRole == Role.DRIVER) {
-                if (schedule.getDriver().getId().equals(loggedUser.getId())) {
-                    allowed = true;
-                }
-            }
-
-            if (!allowed) {
-                throw new UnauthorizedAccessException("Você não tem permissão para cancelar este agendamento.");
-            }
+        if (userRole == Role.DRIVER && !schedule.getDriver().getId().equals(loggedUser.getId())) {
+            throw new UnauthorizedAccessException("Você não tem permissão para cancelar agendamentos de outros motoristas.");
         }
 
         if (schedule.getQueueStatus() == QueueStatus.COMPLETED || schedule.getQueueStatus() == QueueStatus.CANCELED) {
             throw new ValidationException(String.format(
-                    "O agendamento %d está em %s e não pode ser cancelado.",
-                    scheduleId, schedule.getQueueStatus().name())
+                    "O agendamento da placa %s está em %s e não pode ser cancelado.",
+                    transition.licensePlate(), schedule.getQueueStatus().name())
             );
         }
 
         Integer oldQueuePosition = schedule.getQueuePosition();
+        QueueStatus oldStatus = schedule.getQueueStatus();
 
         schedule.setQueueStatus(QueueStatus.CANCELED);
         schedule.setQueuePosition(null);
 
-        Schedule updatedSchedule = scheduleRepository.save(schedule);
+        scheduleRepository.save(schedule);
 
         if (oldQueuePosition != null) {
             scheduleRepository.reorderQueuePositions(schedule.getBranch().getId(), oldQueuePosition);
         }
 
-        return toResponseDTO(updatedSchedule);
+        registerHistory(schedule, oldStatus, QueueStatus.CANCELED, loggedUser);
     }
 
     @Transactional
@@ -294,6 +285,26 @@ public class ScheduleService {
             throw new ValidationException("A Filial " + branch.getName() + " não pertence à Empresa de ID " + dto.companyId() + ".");
         }
         return branch;
+    }
+
+    private Schedule findActiveScheduleByPlateAndBranch(ScheduleTransitionDTO transition, User loggedUser) {
+        Schedule schedule = scheduleRepository.findLatestActiveByPlateAndBranch(
+                transition.licensePlate().toUpperCase().trim(),
+                transition.branchName()
+        ).orElseThrow(() -> new ResourceNotFoundException(
+                String.format("Nenhum agendamento ativo encontrado para a placa %s na filial %s.",
+                        transition.licensePlate(), transition.branchName())
+        ));
+
+        if (loggedUser.getRole() != Role.ADMIN) {
+            if (loggedUser.getCompany() != null) {
+                if (!schedule.getBranch().getCompany().getId().equals(loggedUser.getCompany().getId())) {
+                    throw new UnauthorizedAccessException("Você não tem permissão para operar agendamentos de outra empresa.");
+                }
+            }
+        }
+
+        return schedule;
     }
 
     private Branch validateInternalScopeAndGetBranch(User loggedUser, ScheduleRequestDTO dto) {
@@ -384,5 +395,12 @@ public class ScheduleService {
                 schedule.getCalledAt(),
                 schedule.getReleasedAt()
         );
+    }
+
+    private void registerHistory(Schedule schedule, QueueStatus oldStatus, QueueStatus newStatus, User user) {
+        if (oldStatus != newStatus) {
+            ScheduleHistory history = new ScheduleHistory(schedule, oldStatus, newStatus, user);
+            historyRepository.save(history);
+        }
     }
 }

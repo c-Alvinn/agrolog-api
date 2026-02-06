@@ -1,72 +1,45 @@
 # AGROLOG API - PLANEJAMENTO DO PROJETO
 
 ## ✅ Fase 1: Configuração e Usuários (Concluída)
-- [x] Configuração inicial do projeto (Spring Boot, dependências).
-- [x] Implementação das entidades básicas (User, Company, Carrier).
-- [x] Sistema de Autenticação JWT.
-- [x] Criação de Roles (ADMIN, MANAGER, CARRIER, SCALE_OPERATOR, GATE_KEEPER, DRIVER).
-- [x] Endpoint de registro para DRIVER (acesso público).
-- [x] Endpoint de registro para Usuários Internos (ADMIN, MANAGER).
-- [x] Endpoint de registro para Usuários Carrier (ADMIN, CARRIER).
+- [x] Configuração inicial do projeto.
+- [x] Autenticação JWT e Roles.
+- [x] Endpoints de registro.
 
-## ✅ Fase 2: Módulos Base (Company e Carrier) (Concluída)
-- [x] CRUD para `Company` (Regras de acesso e escopo: ADMIN, MANAGER).
-- [x] CRUD para `Carrier` (Regras de acesso e escopo: ADMIN, CARRIER).
+## ✅ Fase 2: Módulos Base (Concluída)
+- [x] CRUD Company e Carrier.
 
-## ✅ Fase 3: Módulo Filial (Branch) (Concluída)
-- [x] Entidade `Branch` com vínculo à `Company`.
-- [x] CRUD para `Branch`.
-- [x] Implementação do escopo de `MANAGER` (só gerencia filiais da sua Company).
-- [x] Regras de acesso e leitura para `SCALE_OPERATOR` e `GATE_KEEPER`.
+## ✅ Fase 3: Módulo Filial (Concluída)
+- [x] CRUD Branch e regras de escopo.
 
-## ✅ Fase 4: Agendamento e Fila (Schedule) (Concluída)
-- [x] Entidade `Schedule` com `Branch`, `Driver`, `Carrier` e `QueueStatus`.
-- [x] Enum `QueueStatus` (`SCHEDULED`, `IN_SERVICE`, `COMPLETED`, `CANCELED`).
-- [x] Criação do endpoint `POST /schedules`.
-- [x] Implementação da lógica de **Escopo na Criação** para todas as Roles.
-- [x] Lógica de atribuição da **posição na fila** (`queuePosition`) no método `create`.
-- [x] Implementação dos endpoints de Leitura (`GET /schedules` e `GET /schedules/{id}`) com filtro de escopo.
-- [x] Implementação das transições de status (`PATCH /in-service`, `/completed`, `/cancel`).
-- [x] Lógica de **reordenação da fila** ao mover para `IN_SERVICE` ou `CANCELED`.
-- [x] Implementação do endpoint de exclusão (`DELETE /schedules/{id}`) restrito a `ADMIN`.
-- [x] Atualização do `SecurityConfig` e `SchedulingController`.
+## ✅ Fase 4: Agendamento e Fila (Concluída)
+- [x] Regras de negócio, filas e endpoints operacionais.
+- [x] Refatoração para uso de Placa + Filial (UX).
 
 ## ✅ Fase 5: Relatórios e Dashboards (Concluída)
+- [x] Relatórios de Performance (PDF) e Status.
 
-### F5.1 - Estrutura de Relatórios
-- [x] Criação de DTOs de métricas (`QueueStatusReportDTO`) e base do `ReportingService`.
-
-### F5.2 - Relatório de Performance (PDF)
-- [x] Implementar exportação de agendamentos `IN_SERVICE` ou `COMPLETED` em formato PDF.
-- [x] Criar Enum `ReportPeriod` para gestão de filtros temporais (Hoje, Ontem, 7 dias).
-- [x] Implementar validação de escopo rigorosa (apenas dados da `Company` do utilizador logado).
-- [x] Formatação de tabela PDF com tradução para Português, nome da empresa e data de geração no título/ficheiro.
-
-### F5.3 - Relatório de Status da Fila
-- [x] Implementar método para retornar a contagem de agendamentos por `QueueStatus` para dashboards.
-- [x] Criar o endpoint `GET /reports/queue-status` com retorno "achatado" para facilitar a integração com o front-end.
-
-## ⚙️ Fase 6: Otimização do Fluxo e Auditoria
+## ✅ Fase 6: Otimização do Fluxo e Auditoria (Concluída)
 
 ### F6.1 - Comunicação e UX
-- [ ] Implementar mecanismo de notificação básico para avisar o **DRIVER** quando o seu agendamento passar para o status `IN_SERVICE`.
-- [ ] Criar um endpoint simplificado para o `GATE_KEEPER` que permite buscar e transicionar o status de um agendamento pela **placa do caminhão**.
+- [x] Adaptação dos endpoints (`in-service`, `completed`, `cancel`) para funcionar via **Placa** (Supre a necessidade do Gate Keeper).
+- [ ] *(PAUSADO)* Implementar notificação (WhatsApp).
 
 ### F6.2 - Auditoria
-- [ ] Adicionar entidade/estrutura para registrar logs de auditoria de **transição de status** (quem, quando e qual status).
+- [x] Implementação da entidade `ScheduleHistory` para registrar logs de transição de status.
+- [x] Ajuste nos services para gravar histórico automaticamente.
 
 ### F6.3 - Finalização de Mapeamento
-- [ ] **Revisão e finalização de todos os mapeamentos de relacionamento entre entidades** (OneToMany, ManyToOne, etc.) para garantir a integridade total do modelo.
+- [x] Revisão dos relacionamentos bidirecionais (`@OneToMany`) em Company, Carrier e Schedule.
 
-## 💾 Fase 7: Migração de Banco de Dados (Liquibase)
+## ✅ Fase 7: Migração de Banco de Dados (Flyway) (Concluída)
 
-### F7.1 - Configuração
-- [ ] Configurar o Liquibase no projeto.
+### F7.1 - Configuração:
+- [x] Substituição do plano original (Liquibase) pelo **Flyway**.
+- [x] Configuração de `spring.jpa.hibernate.ddl-auto=validate`.
+- [x] Configuração de Schema isolado (`agrolog`).
 
-### F7.2 - Criação de Tabelas
-- [ ] Criar *changelogs* do Liquibase para a criação de todas as tabelas: `COMPANY`, `CARRIER`, `USER`, `BRANCH`, `SCHEDULE`, e outras que surgiram na Fase 6.
-- [ ] **Garantir a criação de todos os vínculos (Foreign Keys).**
-
-### F7.3 - Configuração de Sequences
-- [ ] Criar sequences para as chaves primárias (`id`).
-- [ ] **Configurar as sequences para iniciarem com um número aleatório de até 3 dígitos.**
+###  F7.2 - Script V1:
+- [x] Criação do script `V1__Create_Initial_Schema.sql`.
+- [x] Correção de tabela reservada (`User` -> `users`).
+- [x] Definição de `search_path` e constraints.
+- [x] Execução e validação da primeira migração.

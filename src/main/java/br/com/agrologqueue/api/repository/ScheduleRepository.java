@@ -60,4 +60,14 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    @Query("SELECT s FROM schedule s " +
+            "WHERE s.licensePlate = :plate " +
+            "AND s.branch.name = :branchName " +
+            "AND s.active = true " +
+            "ORDER BY s.createdAt DESC")
+    Optional<Schedule> findLatestActiveByPlateAndBranch(
+            @Param("plate") String plate,
+            @Param("branchName") String branchName
+    );
 }
